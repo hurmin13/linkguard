@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import io
+from html import escape
 import json
 from pathlib import Path
 from typing import Any
@@ -24,42 +25,40 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.markdown(
-    """
-<style>
-  .stApp { background: #f5f8fc; }
-  .block-container { max-width: 1180px; padding-top: 4.5rem; padding-bottom: 3rem; }
-  h1,h2,h3 { letter-spacing: -.035em; }
-  h1 { font-weight: 780 !important; }
-  [data-testid="stMetric"] { background: white; border: 1px solid #e1e8f0;
-      padding: 1rem 1.15rem; border-radius: 14px; }
-  [data-testid="stMetricLabel"] { color: #61738a; }
-  [data-testid="stMetricValue"] { color: #17324d; }
-  [data-baseweb="tab-list"] { gap: 1.5rem; border-bottom: 1px solid #dce5ef; }
-  [data-baseweb="tab"] { font-weight: 650; padding-left: .2rem; padding-right: .2rem; }
-  [data-testid="stTextArea"] textarea { line-height: 1.65; }
-  [data-testid="stExpander"] { background: #fff; border-radius: 12px; }
-  .lg-kicker { display: inline-block; color: #087f8c; font-weight: 750;
-      font-size: .74rem; letter-spacing: .12em; margin-bottom: .45rem; }
-  .lg-title { margin: 0; font-size: 2.65rem; font-weight: 800; line-height: 1.1;
-      letter-spacing: -.065em; color: #132d48; }
-  .lg-subtitle { color: #60758c; margin: .7rem 0 1.6rem; line-height: 1.6; }
-  .lg-status { display: inline-block; color: #087f8c; font-size: .78rem;
-      background: #e1f3f1; border: 1px solid #c4e6e2; padding: .4rem .7rem;
-      border-radius: 40px; font-weight: 650; }
-  .lg-note { border-left: 3px solid #118994; padding: .4rem 1rem;
-      color: #5b6e82; font-size: .9rem; line-height: 1.7; margin: .6rem 0 1.4rem; }
-  .lg-footer { color: #7c8a9b; border-top: 1px solid #dce5ef;
-      padding-top: 1rem; font-size: .8rem; margin-top: 2rem; }
-  @media (max-width: 640px) {
-    .block-container { padding-top: 3.5rem; padding-left: 1rem; padding-right: 1rem; }
-    .lg-title { font-size: 2.2rem; }
-    [data-baseweb="tab-list"] { gap: .8rem; }
-  }
-</style>
-""",
-    unsafe_allow_html=True,
-)
+st.markdown("<style>" + (ROOT / "assets" / "theme.css").read_text(encoding="utf-8") + "</style>", unsafe_allow_html=True)
+
+
+def markup(content: str) -> None:
+    """Render trusted layout markup. Escape all variable text before calling."""
+    st.markdown("".join(line.strip() for line in content.splitlines()), unsafe_allow_html=True)
+
+
+def domain_markup(host: str, registered: str) -> str:
+    """Highlight only an actual DNS-label suffix; supplied host text stays inert."""
+    if registered and (host == registered or host.endswith("." + registered)):
+        prefix = host[:-len(registered)]
+        return (f'<span class="lg-domain-prefix">{escape(prefix)}</span>'
+                f'<span class="lg-domain-registered">{escape(registered)}</span>')
+    return f'<span class="lg-domain-prefix">{escape(host)}</span>'
+
+
+def render_domain_guide() -> None:
+    markup('''<aside class="lg-aside">
+      <div class="lg-aside-label">주소를 읽는 법</div>
+      <h3>익숙한 이름보다,<br>실제 도메인을 확인하세요.</h3>
+      <p>주소 앞에 서비스 이름이 있어도<br>다른 사이트로 연결될 수 있어요.</p>
+      <div class="lg-domain-demo">
+        <div class="lg-example">구조 설명용 예시</div>
+        <div class="lg-domain-text"><span class="lg-domain-prefix">example.org.login-check.</span><span class="lg-domain-registered">example.com</span></div>
+        <div class="lg-domain-caption">실제 등록 도메인 · example.com</div>
+      </div>
+      <ul class="lg-scope-list">
+        <li><span class="lg-scope-number">01</span><div><strong>문자에서 링크만 추출</strong><small>한 번에 최대 30개 주소를 확인합니다.</small></div></li>
+        <li><span class="lg-scope-number">02</span><div><strong>점수와 도메인을 함께 비교</strong><small>낮은 점수여도 도메인은 다를 수 있어요.</small></div></li>
+        <li><span class="lg-scope-number">03</span><div><strong>대상 페이지에 접속하지 않음</strong><small>주소 문자열을 분석하며 웹페이지 내용은 확인하지 않습니다.</small></div></li>
+      </ul>
+    </aside>''')
+
 
 
 def read_artifact(name: str) -> dict[str, Any]:
@@ -163,9 +162,11 @@ def result_csv(results: list[dict[str, Any]]) -> bytes:
     return output.getvalue().encode("utf-8-sig")
 
 
-def render_result_details(row: dict[str, Any], index: int) -> None:
+def render_result_details(row: dict[str, Any], index: int, *, expanded: bool = False) -> None:
     # The expander title contains no user-controlled URL/host markup.
-    with st.expander(f"링크 {index} · 상세 확인", expanded=index == 1):
+    comparison = row.get("domain_match", "비교 안 함")
+    label = "분석 불가" if row.get("error") else ("도메인 불일치" if comparison == "불일치" else str(row.get("verdict", "")))
+    with st.expander(f"링크 {index} · {label} · 상세 확인", expanded=expanded):
         st.code(str(row.get("input_url", "")), language=None, wrap_lines=True)
         if row.get("error"):
             st.warning("모델 분석을 제공할 수 없습니다." if row.get("host") else "이 입력은 URL로 분석할 수 없습니다.")
@@ -178,15 +179,20 @@ def render_result_details(row: dict[str, Any], index: int) -> None:
             st.caption("머신러닝 결과 · 등록 도메인 특징 모델")
             score = row.get("score")
             st.metric("피싱 의심 점수", "미제공" if score is None else f"{safe_number(score) * 100:.1f} / 100")
+            if score is not None:
+                width = min(100, max(0, safe_number(score) * 100))
+                boundary = min(100, max(0, safe_number(st.session_state.get("last_request", {}).get("threshold", .5)) * 100))
+                markup(f'<div class="lg-score-rail" aria-hidden="true"><div class="lg-score-fill" style="width:{width:.2f}%"></div><span class="lg-score-threshold" style="left:{boundary:.2f}%"></span></div>')
+                st.caption(f"의심 분류 기준 {boundary:.0f} / 100")
             st.text(str(row.get("verdict", "분석 불가")))
             st.caption("점수는 모델 출력이며 실제 피해 발생 확률이 아닙니다.")
         with domain_col:
             st.caption("도메인 구조 확인 · 규칙 기반")
-            st.text("접속 호스트")
-            st.code(str(row.get("host", "")), language=None, wrap_lines=True)
-            st.text("등록 가능 도메인")
-            st.code(str(row.get("registered_domain") or "확인할 수 없음"), language=None, wrap_lines=True)
-            comparison = row.get("domain_match", "비교 안 함")
+            host = str(row.get("host", ""))
+            registered = str(row.get("registered_domain") or "")
+            markup('<div class="lg-result-domain"><div class="lg-aside-label">실제 접속 호스트</div><div class="lg-domain-text">'
+                   + domain_markup(host, registered) + '</div></div>')
+            st.caption("강조된 부분이 등록 가능 도메인입니다." if registered else "등록 가능 도메인을 구분할 수 없습니다.")
             if comparison == "불일치":
                 st.warning("예상한 공식 도메인과 다릅니다. 공식 경로에서 다시 확인하세요.")
             elif comparison == "일치":
@@ -209,10 +215,14 @@ def render_result_details(row: dict[str, Any], index: int) -> None:
 
 def render_results(results: list[dict[str, Any]]) -> None:
     st.divider()
-    st.subheader("검사 결과")
+    markup(f'<div class="lg-results-intro"><h2>검사 결과</h2><span class="lg-badge">{len(results)}개 링크 분석 완료</span></div>')
     request = st.session_state.get("last_request", {})
     st.caption(f"분류 기준 {safe_number(request.get('threshold', .5)):.2f} · 대상 페이지에 접속하지 않고 주소를 분석했습니다.")
-    st.info("등록 도메인의 문자 특징으로 계산한 교육용 점수입니다. HTTPS·www·경로·쿼리는 모델 입력에서 제외하므로, 같은 도메인의 서로 다른 경로는 같은 점수를 받습니다. 실제 페이지의 악성 여부는 확인하지 않습니다.")
+    mismatch = sum(row.get("domain_match") == "불일치" for row in results)
+    if mismatch:
+        markup(f'<div class="lg-summary-note"><strong>예상한 도메인과 다른 링크가 {mismatch}개 있어요.</strong><br>모델 점수가 낮더라도 실제 도메인을 확인하고, 공식 경로에서 다시 확인하세요. 도메인 불일치만으로 피싱을 확정하지 않습니다.</div>')
+    else:
+        markup('<div class="lg-summary-note neutral">점수와 도메인 비교 결과를 함께 확인하세요. 낮은 의심 점수나 도메인 일치만으로 사이트의 안전을 확정할 수 없습니다.</div>')
     summary_cols = st.columns(4)
     summary_cols[0].metric("추출한 링크", len(results))
     summary_cols[1].metric("모델 의심", sum(r.get("verdict") == "의심" for r in results))
@@ -237,8 +247,10 @@ def render_results(results: list[dict[str, Any]]) -> None:
         column_config={"입력 URL": st.column_config.TextColumn(width="large")},
     )
     st.caption("낮은 의심 점수도 안전을 보장하지 않습니다. 공식 앱이나 직접 입력한 공식 주소로 재확인하세요.")
+    first_attention = next((i for i, row in enumerate(results, 1)
+                            if row.get("domain_match") == "불일치" or row.get("error") or row.get("verdict") == "의심"), 1)
     for index, row in enumerate(results, 1):
-        render_result_details(row, index)
+        render_result_details(row, index, expanded=index == first_attention)
     st.download_button(
         "검사 결과 CSV 내려받기",
         data=result_csv(results),
@@ -246,95 +258,78 @@ def render_results(results: list[dict[str, Any]]) -> None:
         mime="text/csv",
         key="download_results",
     )
+    st.caption("같은 등록 도메인은 경로·쿼리·HTTPS 표기가 달라도 같은 점수를 받습니다. 실제 페이지 내용은 확인하지 않습니다.")
 
 
 def render_inspector(info: dict[str, Any]) -> None:
-    st.subheader("클릭하기 전에, 주소부터 확인하세요")
-    st.caption("URL 하나 또는 링크가 포함된 문자 내용을 입력하세요. 최대 30개 링크, 20,000자까지 검사합니다.")
+    markup('''<section class="lg-hero">
+      <div class="lg-eyebrow">링크 검사</div>
+      <h1>클릭하기 전에,<br><span class="lg-emphasis">링크의 목적지</span>를 확인하세요.</h1>
+      <p>의심스러운 URL이나 받은 문자를 붙여 넣으세요.<br>도메인 분석과 머신러닝 점수를 함께 확인할 수 있습니다.</p>
+    </section>''')
     for key, default in (("input_text", ""), ("expected_domain", ""), ("results", []), ("sample_loaded", False)):
         st.session_state.setdefault(key, default)
 
-    example_cols = st.columns(3)
-    example_cols[0].button("예시 1 · 기본 주소", on_click=set_example, args=("single",), width="stretch")
-    example_cols[1].button("예시 2 · 도메인 혼동", on_click=set_example, args=("domain",), width="stretch")
-    example_cols[2].button("예시 3 · 문자 속 링크", on_click=set_example, args=("message",), width="stretch")
-    if st.session_state["sample_loaded"]:
-        st.caption("예시 주소는 예약 도메인을 사용한 교육용 입력입니다. 실제 정상·피싱 사례나 성능 측정 자료가 아닙니다.")
-
-    st.text_area(
-        "검사할 URL 또는 문자",
-        key="input_text",
-        height=170,
-        max_chars=20000,
-        placeholder="https://example.org/notice\n또는 받은 문자 내용을 붙여 넣으세요.",
-        on_change=invalidate_results,
-    )
-    comparison_col, action_col = st.columns([3, 2], gap="large")
-    with comparison_col:
-        st.text_input(
-            "예상한 공식 도메인 (선택)",
-            key="expected_domain",
-            placeholder="예: example.org",
-            max_chars=253,
-            help="공식 사이트에서 직접 확인한 도메인을 입력하세요. 입력한 문자열을 공식 도메인으로 인증하는 기능은 아닙니다.",
-            on_change=invalidate_results,
-        )
-    with action_col:
-        st.caption("검사 범위")
-        st.write("등록 도메인 특징 분석 · 페이지 접속 없음")
-        st.caption("입력 내용은 검사 기록 파일로 자동 저장하지 않습니다.")
-
-    default_threshold = min(.99, max(.01, safe_number(info.get("threshold"), .5)))
-    with st.expander("분류 기준 설정"):
-        threshold = st.slider(
-            "이 점수 이상이면 ‘의심’으로 분류",
-            min_value=.01,
-            max_value=.99,
-            value=round(default_threshold, 2),
-            step=.01,
-            key="inspect_threshold",
-            help="낮출수록 더 많은 주소를 의심으로 분류합니다. 변경 후 다시 검사하세요.",
-            on_change=invalidate_results,
-        )
-        st.caption("도메인 일치 여부는 이 기준과 무관하게 별도로 비교합니다.")
-
-    button_cols = st.columns([3, 1, 6])
-    analyze = button_cols[0].button("링크 검사하기", type="primary", key="analyze", width="stretch")
-    button_cols[1].button("초기화", key="clear", on_click=clear_input, width="stretch")
-    if analyze:
-        st.session_state["results"] = []
-        text = st.session_state["input_text"].strip()
-        if not text:
-            st.warning("검사할 URL이나 문자를 먼저 입력해 주세요.")
-        else:
-            try:
-                from linkguard.service import analyze_text
-
-                with st.spinner("주소 구조와 학습 모델을 확인하고 있습니다…"):
-                    results = analyze_text(
-                        text,
-                        expected_domain=st.session_state["expected_domain"].strip() or None,
-                        threshold=threshold,
-                    )
-                st.session_state["results"] = results
-                st.session_state["last_request"] = {"threshold": threshold}
-                if not results:
-                    st.warning("검사할 링크를 찾지 못했습니다. HTTP/HTTPS 주소 또는 도메인을 입력해 주세요.")
-            except ValueError as exc:
-                st.warning("입력 내용을 확인해 주세요.")
-                st.text(str(exc))
-            except (ImportError, OSError) as exc:
-                st.error("검사에 필요한 모델 또는 프로그램 파일을 읽지 못했습니다.")
-                st.caption("저장소 파일과 설치 상태를 확인하고 아래 사용 가이드를 참고해 주세요.")
-
+    workspace, guide = st.columns([2.05, 1], gap="large")
+    with workspace:
+        with st.container(key="scan_workspace"):
+            markup('<div class="lg-panel-heading"><strong>검사할 링크를 입력하세요</strong><span>최대 30개 · 20,000자</span></div>')
+            st.text_area(
+                "검사할 URL 또는 문자", key="input_text", height=155, max_chars=20000,
+                placeholder="https://example.org/notice\n또는 링크가 포함된 문자 내용을 붙여 넣으세요.",
+                on_change=invalidate_results,
+            )
+            with st.container(key="example_buttons"):
+                examples = st.columns(3)
+                examples[0].button("예시 1 · 기본 주소", on_click=set_example, args=("single",), width="stretch")
+                examples[1].button("예시 2 · 도메인 혼동", on_click=set_example, args=("domain",), width="stretch")
+                examples[2].button("예시 3 · 문자 속 링크", on_click=set_example, args=("message",), width="stretch")
+            if st.session_state["sample_loaded"]:
+                st.caption("예약 도메인으로 만든 구조 설명용 예시입니다. 실제 피싱 사례나 성능 측정 자료가 아닙니다.")
+            st.text_input(
+                "예상한 공식 도메인 (선택)", key="expected_domain", placeholder="예: example.org", max_chars=253,
+                help="공식 사이트에서 직접 확인한 도메인을 입력하세요. 입력값을 공식 도메인으로 인증하는 기능은 아닙니다.",
+                on_change=invalidate_results,
+            )
+            default_threshold = min(.99, max(.01, safe_number(info.get("threshold"), .5)))
+            with st.expander("분류 기준 설정"):
+                threshold = st.slider(
+                    "이 점수 이상이면 ‘의심’으로 분류", min_value=.01, max_value=.99,
+                    value=round(default_threshold, 2), step=.01, key="inspect_threshold",
+                    help="낮출수록 더 많은 주소를 의심으로 분류합니다. 변경 후 다시 검사하세요.",
+                    on_change=invalidate_results,
+                )
+                st.caption("도메인 일치 여부는 이 기준과 무관하게 별도로 비교합니다.")
+            actions = st.columns([4, 1])
+            analyze = actions[0].button("링크 검사하기", type="primary", key="analyze", width="stretch")
+            actions[1].button("초기화", key="clear", on_click=clear_input, width="stretch")
+            markup('''<div class="lg-field-note"><svg width="13" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></svg><span>입력 내용은 검사 기록 파일로 자동 저장하지 않습니다.</span></div>''')
+        if analyze:
+            st.session_state["results"] = []
+            text = st.session_state["input_text"].strip()
+            if not text:
+                st.warning("검사할 URL이나 문자를 먼저 입력해 주세요.")
+            else:
+                try:
+                    from linkguard.service import analyze_text
+                    with st.spinner("주소 구조와 학습 모델을 확인하고 있습니다…"):
+                        results = analyze_text(text, expected_domain=st.session_state["expected_domain"].strip() or None, threshold=threshold)
+                    st.session_state["results"] = results
+                    st.session_state["last_request"] = {"threshold": threshold}
+                    if not results:
+                        st.warning("검사할 링크를 찾지 못했습니다. HTTP/HTTPS 주소 또는 도메인을 입력해 주세요.")
+                except ValueError as exc:
+                    st.warning("입력 내용을 확인해 주세요.")
+                    st.text(str(exc))
+                except (ImportError, OSError):
+                    st.error("검사에 필요한 모델 또는 프로그램 파일을 읽지 못했습니다.")
+                    st.caption("저장소 파일과 설치 상태를 확인하고 사용 가이드를 참고해 주세요.")
+        if not st.session_state["results"]:
+            markup('''<div class="lg-empty"><span class="lg-empty-icon" aria-hidden="true">↗</span><div><strong>검사 결과가 이곳에 표시됩니다.</strong><small>점수 · 실제 도메인 · 주소에서 관찰한 특징을 확인하세요.</small></div></div>''')
+    with guide:
+        render_domain_guide()
     if st.session_state["results"]:
         render_results(st.session_state["results"])
-    else:
-        st.markdown(
-            '<div class="lg-note">주소 앞부분의 익숙한 이름만 보고 판단하지 마세요. '
-            'LinkGuard는 모델의 의심 점수와 도메인 구조를 구분해서 보여줍니다.</div>',
-            unsafe_allow_html=True,
-        )
 
 
 def metric_columns(metrics: dict[str, Any]) -> None:
@@ -355,14 +350,14 @@ def confusion_table(metrics: dict[str, Any]) -> pd.DataFrame:
 def render_evaluation(info: dict[str, Any]) -> None:
     metrics = read_artifact("metrics.json")
     curve = read_artifact("threshold_curve.json")
-    st.subheader("탐지 성능과 오탐을 함께 확인하세요")
+    markup('<section class="lg-hero"><div class="lg-eyebrow">모델 평가</div><h1>성능의 숫자 뒤에,<br><span class="lg-emphasis">오탐과 미탐</span>을 함께.</h1></section>')
     st.caption("피싱을 양성 클래스로 평가합니다. 슬라이더는 검증 데이터에만 적용하며 고정 내부 평가 결과는 바뀌지 않습니다.")
     if not metrics:
         st.info("학습 결과가 준비되면 모델 비교와 최종 평가 수치가 표시됩니다.")
         st.code("python -m scripts.download_data\npython -m scripts.train", language="bash")
         return
 
-    st.warning("원본 정상 샘플은 모두 https://www. 형식이며 경로·쿼리가 없습니다. 최종 모델은 HTTPS·www·경로·쿼리를 제외해 이 단서에 의존하는 문제를 줄였지만, 데이터 수집 편향은 남아 있습니다. 평가 수치는 실제 링크 탐지 성능을 보장하지 않습니다.")
+    st.warning("원본 정상 샘플은 모두 `https://www.` 형식이며 경로·쿼리가 없습니다. 최종 모델은 HTTPS·www·경로·쿼리를 제외해 이 단서에 의존하는 문제를 줄였지만, 데이터 수집 편향은 남아 있습니다. 평가 수치는 실제 링크 탐지 성능을 보장하지 않습니다.")
 
     selection = metrics.get("selection", {})
     selected = info.get("selected_model") or selection.get("model") or selection.get("selected_model") or curve.get("model", "")
@@ -414,7 +409,7 @@ def render_evaluation(info: dict[str, Any]) -> None:
         counts[2].metric("정상을 잘못 의심", int(safe_number(selected_row.get("fp"))))
         chart_rows = pd.DataFrame(rows)
         chart = chart_rows.set_index("threshold")[["recall", "fpr"]].rename(columns={"recall": "피싱 탐지율", "fpr": "정상 오탐률"})
-        st.line_chart(chart, color=["#087f8c", "#d97757"], width="stretch")
+        st.line_chart(chart, color=["#c4b5fd", "#f4c37f"], width="stretch")
         st.caption("기준을 낮추면 일반적으로 피싱 탐지는 늘지만 정상 주소에 대한 오탐도 늘어납니다.")
     else:
         st.info("검증 데이터의 기준별 결과 파일이 없어 민감도 실험을 표시할 수 없습니다.")
@@ -427,17 +422,15 @@ def render_evaluation(info: dict[str, Any]) -> None:
 
 
 def render_guide() -> None:
-    st.subheader("결과를 읽는 세 가지 기준")
-    cols = st.columns(3, gap="large")
-    with cols[0]:
-        st.markdown("**01 · 의심 점수**")
-        st.write("등록 도메인의 문자 특징을 바탕으로 계산한 모델 출력입니다. 점수가 낮더라도 사이트가 안전하다고 확정할 수 없습니다.")
-    with cols[1]:
-        st.markdown("**02 · 도메인 비교**")
-        st.write("직접 확인한 공식 도메인과 주소가 같은 범위에 있는지 비교합니다. 불일치는 확인이 필요한 정보이며 피싱 확정 판정이 아닙니다.")
-    with cols[2]:
-        st.markdown("**03 · 구조 관찰**")
-        st.write("실제 호스트, 하위 도메인, @ 구문 등에서 관찰한 특징입니다. 규칙 기반 설명을 모델의 개별 판단 근거로 해석하지 마세요.")
+    markup('<section class="lg-hero"><div class="lg-eyebrow">사용 가이드</div><h1>결과를 읽는<br><span class="lg-emphasis">세 가지 기준.</span></h1><p>하나의 점수보다, 여러 정보를 함께 확인하는 습관이 중요합니다.</p></section>')
+    cards = [
+        ("01", "의심 점수", "등록 도메인의 문자 패턴을 분석한 모델 출력입니다. 실제 피해 발생 확률이나 사이트의 안전 인증이 아닙니다."),
+        ("02", "도메인 비교", "직접 확인한 공식 도메인에 속하는 주소인지 비교합니다. 불일치는 추가 확인이 필요하다는 의미입니다."),
+        ("03", "주소 구조", "실제 호스트, 하위 도메인, @ 구문을 확인합니다. 이 설명은 URL 관찰 결과이며 모델의 판단 근거와 구분됩니다."),
+    ]
+    for col, (index, title, body) in zip(st.columns(3, gap="large"), cards):
+        with col:
+            markup(f'<div class="lg-guide-card"><div class="lg-guide-index">{index} / READ THE SIGNAL</div><h3>{title}</h3><p>{body}</p></div>')
 
     st.divider()
     st.markdown("**서비스 사용 순서**")
@@ -449,7 +442,7 @@ def render_guide() -> None:
     with st.expander("이 서비스가 확인하지 않는 것", expanded=True):
         st.write("웹페이지 내용, 로그인 화면, 악성 파일, 인증서 유효성, 실시간 평판, 단축 URL의 최종 목적지는 확인하지 않습니다.")
         st.write("대상 URL에 접속하지 않으며 문자 전체의 사기 여부를 판정하지 않습니다. 검사 결과만으로 링크를 클릭하거나 개인정보를 입력하지 마세요.")
-        st.write("원본 정상 샘플은 모두 https://www. 형식이며 경로·쿼리가 없습니다. 최종 모델은 이 특징들을 입력에서 제외해 특정 수집 형식에 의존하는 문제를 줄였습니다. 그래도 다른 데이터와 현재 서비스에 대한 별도 검증이 필요합니다.")
+        st.write("원본 정상 샘플은 모두 `https://www.` 형식이며 경로·쿼리가 없습니다. 최종 모델은 이 특징들을 입력에서 제외해 특정 수집 형식에 의존하는 문제를 줄였습니다. 그래도 다른 데이터와 현재 서비스에 대한 별도 검증이 필요합니다.")
         st.write("같은 등록 도메인은 HTTP/HTTPS, www, 하위 도메인, 경로, 쿼리가 달라도 같은 모델 점수를 받습니다. 따라서 정상 도메인의 침해된 페이지, 악성 하위 경로, 공유 호스팅 내 개별 콘텐츠의 위험은 이 모델로 구별할 수 없습니다.")
     with st.expander("개인정보와 입력 범위"):
         st.write("최대 20,000자의 텍스트와 30개의 링크를 처리합니다. 입력은 앱을 실행하는 서버에서 분석되며 별도 검사 기록 파일로 자동 저장하지 않습니다.")
@@ -462,16 +455,12 @@ def render_guide() -> None:
 
 
 info = get_model_info()
-title_col, status_col = st.columns([4, 1])
-with title_col:
-    st.markdown('<div class="lg-kicker">UNDERSTAND BEFORE YOU CLICK</div><div class="lg-title">LinkGuard</div><div class="lg-subtitle">의심스러운 링크를, 이해할 수 있는 정보로.</div>', unsafe_allow_html=True)
-with status_col:
-    st.markdown('<div class="lg-status">등록 도메인 분석</div>', unsafe_allow_html=True)
-    st.caption("머신러닝 · 도메인 비교")
-
+markup('''<header class="lg-topbar">
+  <div class="lg-brand"><div class="lg-mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m10 13 4-4M8 15l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 3 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0)"/></svg></div><div><div class="lg-brand-name">LinkGuard</div><div class="lg-brand-sub">URL INTELLIGENCE</div></div></div>
+  <div class="lg-session"><span></span>페이지 접속 없는 분석</div>
+</header>''')
 if not info:
     st.info("모델 파일이 없거나 아직 준비되지 않았습니다. 구조 분석을 이용하거나 사용 가이드의 학습 방법을 확인하세요.")
-
 inspect_tab, evaluate_tab, guide_tab = st.tabs(["URL 검사", "모델 평가", "사용 가이드"])
 with inspect_tab:
     render_inspector(info)
@@ -479,5 +468,4 @@ with evaluate_tab:
     render_evaluation(info)
 with guide_tab:
     render_guide()
-
-st.markdown('<div class="lg-footer">LinkGuard · 머신러닝 기반 피싱 URL 검사 및 사칭 도메인 설명 서비스<br>점수는 안전 보증이 아닙니다. 공식 경로에서 한 번 더 확인하세요.</div>', unsafe_allow_html=True)
+markup('<footer class="lg-footer"><span><strong>LinkGuard</strong> &nbsp; · &nbsp; 링크를 확인하는 더 신중한 방법</span><span>교육용 분석 도구 · 낮은 점수는 안전을 보장하지 않습니다.</span></footer>')

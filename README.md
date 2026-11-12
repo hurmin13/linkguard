@@ -8,9 +8,11 @@ URL이나 문자 내용을 붙여넣으면 URL 문자열을 분석하고, 학습
 
 ## 실행 화면
 
-![LinkGuard 검사 결과 화면](docs/images/linkguard-results.jpg)
+![LinkGuard URL 검사 화면](docs/images/linkguard-home.jpg)
 
-예약 도메인을 사용한 실제 실행 화면입니다. 모델 점수가 낮아도 도메인 불일치를 따로 확인할 수 있습니다.
+차콜 배경과 바이올렛 포인트의 검사 화면입니다. 입력 영역 옆에서 도메인 읽는 법을 확인하고, 결과에서는 실제 등록 도메인과 불일치를 강조합니다.
+
+[검사 결과 화면 보기](docs/images/linkguard-results.jpg) · 예약 도메인으로 만든 구조 설명용 예시이며, 실제 피싱 사례가 아닙니다.
 
 ## 주요 기능
 
@@ -107,6 +109,7 @@ macOS/Linux에서는 `.\.venv\Scripts\python.exe` 대신 `.venv/bin/python`을 �
 | 경로 | 역할 |
 | --- | --- |
 | `app.py` | Streamlit 웹앱 |
+| `assets/theme.css` | 색상, 레이아웃, 가독성 및 반응형 스타일 |
 | `run_windows.bat` | Windows에서 가상환경 준비 후 앱 실행 |
 | `linkguard/` | URL 파싱, 특징 추출, 모델 추론, 검사 서비스 |
 | `scripts/` | 공개 데이터 다운로드 및 모델 학습 |

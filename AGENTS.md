@@ -14,6 +14,7 @@
 - `linkguard/model.py`: 번들 JSON 모델 로딩 및 추론
 - `linkguard/service.py`: 검사 결과 조합
 - `app.py`: Streamlit 한국어 화면
+- `assets/theme.css`: LinkGuard 화면의 공통 스타일과 반응형 배치
 - `scripts/`: 데이터 다운로드와 재현 가능한 학습
 - `artifacts/`: 실제 학습 결과와 평가 메타데이터
 - `tests/`: 파서, 모델, 서비스, 화면 회귀 검증
