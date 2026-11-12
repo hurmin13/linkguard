@@ -1,0 +1,6 @@
+streamlit==1.67.0
+pandas==2.2.3
+numpy==2.3.5
+scikit-learn==1.8.0
+tldextract==5.4.0
+idna==3.18

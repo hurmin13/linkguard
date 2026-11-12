@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-11-12T11:20:56.328895+00:00",
+  "dataset": {
+    "name": "UCI PhiUSIIL Phishing URL (Website)",
+    "page": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "license": "CC BY 4.0",
+    "csv_sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6"
+  },
+  "preprocessing": {
+    "raw_rows": 235795,
+    "invalid_rows_removed": 5,
+    "conflicting_url_count": 0,
+    "conflicting_rows_removed": 0,
+    "duplicate_rows_removed": 437,
+    "usable_rows": 235353,
+    "group_column": "registered_domain (host fallback for IP/unknown suffix)",
+    "label_mapping": {
+      "source_0_phishing": 1,
+      "source_1_legitimate": 0
+    }
+  },
+  "split": {
+    "train": {
+      "rows": 141211,
+      "domains": 118624,
+      "legitimate": 80910,
+      "phishing": 60301
+    },
+    "validation": {
+      "rows": 47071,
+      "domains": 39545,
+      "legitimate": 26970,
+      "phishing": 20101
+    },
+    "test": {
+      "rows": 47071,
+      "domains": 39535,
+      "legitimate": 26970,
+      "phishing": 20101
+    },
+    "method": "StratifiedGroupKFold(n_splits=5): test=fold0, validation=fold1, train=fold2-4",
+    "seed": 42,
+    "domain_overlap": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    },
+    "assignment_sha256": "e00bf6e6bd8a0fa1ef9d144dae28fe985cc1274da39b6c2d271380946127e797"
+  },
+  "raw_format_audit": {
+    "legitimate": {
+      "rows": 134850,
+      "https_prefix_ratio": 1.0,
+      "https_www_prefix_ratio": 1.0,
+      "http_www_prefix_ratio": 0.0
+    },
+    "phishing": {
+      "rows": 100945,
+      "https_prefix_ratio": 0.48735449997523406,
+      "https_www_prefix_ratio": 0.024260736044380605,
+      "http_www_prefix_ratio": 0.38929119817722524
+    }
+  },
+  "selection": {
+    "model": "char_ngram_logistic",
+    "threshold": 0.43,
+    "metric": "validation F1 (ties: lower FPR)",
+    "test_used_for_selection": false,
+    "development_iteration": 3,
+    "test_partition_previously_inspected": true,
+    "note": "Final bounded development iteration adds domain character patterns after removing formatting shortcuts. Current candidate and threshold selection use validation only; the internal test partition was previously inspected in earlier iterations."
+  },
+  "features": [
+    "label_length",
+    "digit_ratio",
+    "alpha_ratio",
+    "vowel_ratio",
+    "hyphen_ratio",
+    "label_entropy",
+    "unique_char_ratio",
+    "longest_digit_run",
+    "longest_alpha_run",
+    "has_ip",
+    "has_punycode",
+    "suffix_length"
+  ],
+  "models": {
+    "logistic_regression": {
+      "validation": {
+        "threshold": 0.35000000000000003,
+        "precision": 0.5934920077287897,
+        "recall": 0.6723546092234217,
+        "f1": 0.630466727310895,
+        "fpr": 0.3432332220986281,
+        "accuracy": 0.6634233392109792,
+        "tp": 13515,
+        "fp": 9257,
+        "tn": 17713,
+        "fn": 6586,
+        "roc_auc": 0.7048754079256079,
+        "average_precision": 0.7048868590251616
+      },
+      "threshold_0_5_validation": {
+        "threshold": 0.5,
+        "precision": 0.7413314840499307,
+        "recall": 0.37227003631660116,
+        "f1": 0.495644974333499,
+        "fpr": 0.0968112717834631,
+        "accuracy": 0.6764674640436787,
+        "tp": 7483,
+        "fp": 2611,
+        "tn": 24359,
+        "fn": 12618
+      },
+      "test": {
+        "threshold": 0.35000000000000003,
+        "precision": 0.5488019559902201,
+        "recall": 0.5583304313218248,
+        "f1": 0.5535251905008508,
+        "fpr": 0.3421208750463478,
+        "accuracy": 0.6153682734592424,
+        "tp": 11223,
+        "fp": 9227,
+        "tn": 17743,
+        "fn": 8878,
+        "roc_auc": 0.6786826212462068,
+        "average_precision": 0.6882201066427358
+      }
+    },
+    "random_forest": {
+      "validation": {
+        "threshold": 0.29,
+        "precision": 0.5840260615592002,
+        "recall": 0.775931545694244,
+        "f1": 0.6664387805242806,
+        "fpr": 0.4119021134593993,
+        "accuracy": 0.6683095748974953,
+        "tp": 15597,
+        "fp": 11109,
+        "tn": 15861,
+        "fn": 4504,
+        "roc_auc": 0.7564561736681741,
+        "average_precision": 0.7551587616078301
+      },
+      "threshold_0_5_validation": {
+        "threshold": 0.5,
+        "precision": 0.8138657899825953,
+        "recall": 0.4187353862991891,
+        "f1": 0.5529678415399271,
+        "fpr": 0.07137560252131998,
+        "accuracy": 0.71088355887914,
+        "tp": 8417,
+        "fp": 1925,
+        "tn": 25045,
+        "fn": 11684
+      },
+      "test": {
+        "threshold": 0.29,
+        "precision": 0.533209239360352,
+        "recall": 0.6270334809213471,
+        "f1": 0.5763277624088342,
+        "fpr": 0.4091212458286986,
+        "accuracy": 0.6063181151876952,
+        "tp": 12604,
+        "fp": 11034,
+        "tn": 15936,
+        "fn": 7497,
+        "roc_auc": 0.7174426589180332,
+        "average_precision": 0.728504466397991
+      }
+    },
+    "char_ngram_logistic": {
+      "validation": {
+        "threshold": 0.43,
+        "precision": 0.8660917195967601,
+        "recall": 0.739415949455251,
+        "f1": 0.7977564274596103,
+        "fpr": 0.08520578420467186,
+        "accuracy": 0.8399014255061503,
+        "tp": 14863,
+        "fp": 2298,
+        "tn": 24672,
+        "fn": 5238,
+        "roc_auc": 0.8965442240083943,
+        "average_precision": 0.8989947984061505
+      },
+      "threshold_0_5_validation": {
+        "threshold": 0.5,
+        "precision": 0.9010855683269476,
+        "recall": 0.7020048753793343,
+        "f1": 0.7891837476580633,
+        "fpr": 0.05743418613274008,
+        "accuracy": 0.8398376919971957,
+        "tp": 14111,
+        "fp": 1549,
+        "tn": 25421,
+        "fn": 5990
+      },
+      "test": {
+        "threshold": 0.43,
+        "precision": 0.8637092157985118,
+        "recall": 0.7506591711855132,
+        "f1": 0.8032258923105586,
+        "fpr": 0.08828327771598071,
+        "accuracy": 0.8429393894329842,
+        "tp": 15089,
+        "fp": 2381,
+        "tn": 24589,
+        "fn": 5012,
+        "roc_auc": 0.9028686058651862,
+        "average_precision": 0.9071390134236259
+      }
+    }
+  },
+  "export_validation": {
+    "samples": 1000,
+    "classes_checked": [
+      0,
+      1
+    ],
+    "max_absolute_score_difference": 3.3306690738754696e-16
+  },
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scikit_learn": "1.8.0",
+    "tldextract": "5.4.0"
+  },
+  "feature_version": "domain-lexical-v2",
+  "source_fingerprints": {
+    "features_sha256": "71b757dd4d7d9eefd8ae0f2f4ab929a5a3e2af747de12543c0c8654f025028e4",
+    "urltools_sha256": "616c8e55b3647eed9372e2c440d8d983639e47618a18b87aacfa96b7884b78ad"
+  },
+  "training_parameters": {
+    "random_state": 42,
+    "random_forest_n_estimators": 80,
+    "random_forest_max_depth": 10,
+    "random_forest_min_samples_leaf": 5,
+    "char_ngram_range": [
+      2,
+      5
+    ],
+    "char_min_df": 3,
+    "char_max_features": 30000,
+    "char_sublinear_tf": true,
+    "char_logistic_C": 4.0,
+    "char_vocabulary_fit_scope": "train only"
+  },
+  "feature_means_by_class": {
+    "legitimate": {
+      "label_length": 10.828839451242121,
+      "digit_ratio": 0.006285317344351108,
+      "alpha_ratio": 0.9868523836207725,
+      "vowel_ratio": 0.366367500738347,
+      "hyphen_ratio": 0.006862299034876315,
+      "label_entropy": 2.818634022928041,
+      "unique_char_ratio": 0.7888050928802183,
+      "longest_digit_run": 0.0464293659621802,
+      "longest_alpha_run": 10.319406748238784,
+      "has_ip": 0.0,
+      "has_punycode": 0.0,
+      "suffix_length": 3.203885799035966
+    },
+    "phishing": {
+      "label_length": 12.071132205008805,
+      "digit_ratio": 0.08626068873054724,
+      "alpha_ratio": 0.889948089155598,
+      "vowel_ratio": 0.3023942735153762,
+      "hyphen_ratio": 0.02178175047717902,
+      "label_entropy": 2.847936530736251,
+      "unique_char_ratio": 0.7822059831746976,
+      "longest_digit_run": 0.8317164661751391,
+      "longest_alpha_run": 8.613235425808185,
+      "has_ip": 0.0060097708526113645,
+      "has_punycode": 0.0013432434852690964,
+      "suffix_length": 5.099320418295971
+    }
+  },
+  "input_representations": {
+    "logistic_regression": {
+      "version": "domain-lexical-v2",
+      "type": "numeric_domain_aggregates",
+      "input": "12 numeric statistics of registered-domain label and suffix",
+      "feature_count": 12
+    },
+    "random_forest": {
+      "version": "domain-lexical-v2",
+      "type": "numeric_domain_aggregates",
+      "input": "12 numeric statistics of registered-domain label and suffix",
+      "feature_count": 12
+    },
+    "char_ngram_logistic": {
+      "version": "registered-domain-char-tfidf-v1",
+      "type": "character_ngram_tfidf",
+      "input": "normalized ASCII registered domain including public/private suffix",
+      "feature_count": 30000,
+      "ngram_range": [
+        2,
+        5
+      ],
+      "fit_scope": "training split only",
+      "sublinear_tf": true,
+      "norm": "l2"
+    }
+  },
+  "selected_feature_count": 30000,
+  "features_scope": "numeric baseline features; see input_representations for character model vocabulary"
+}

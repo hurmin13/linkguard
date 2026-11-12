@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-11-12T11:12:37.196478+00:00",
+  "dataset": {
+    "name": "UCI PhiUSIIL Phishing URL (Website)",
+    "page": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "license": "CC BY 4.0",
+    "csv_sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6"
+  },
+  "preprocessing": {
+    "raw_rows": 235795,
+    "invalid_rows_removed": 5,
+    "conflicting_url_count": 0,
+    "conflicting_rows_removed": 0,
+    "duplicate_rows_removed": 437,
+    "usable_rows": 235353,
+    "group_column": "registered_domain (host fallback for IP/unknown suffix)",
+    "label_mapping": {
+      "source_0_phishing": 1,
+      "source_1_legitimate": 0
+    }
+  },
+  "split": {
+    "train": {
+      "rows": 141211,
+      "domains": 118624,
+      "legitimate": 80910,
+      "phishing": 60301
+    },
+    "validation": {
+      "rows": 47071,
+      "domains": 39545,
+      "legitimate": 26970,
+      "phishing": 20101
+    },
+    "test": {
+      "rows": 47071,
+      "domains": 39535,
+      "legitimate": 26970,
+      "phishing": 20101
+    },
+    "method": "StratifiedGroupKFold(n_splits=5): test=fold0, validation=fold1, train=fold2-4",
+    "seed": 42,
+    "domain_overlap": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    },
+    "assignment_sha256": "e00bf6e6bd8a0fa1ef9d144dae28fe985cc1274da39b6c2d271380946127e797"
+  },
+  "selection": {
+    "model": "random_forest",
+    "threshold": 0.38,
+    "metric": "validation F1 (ties: lower FPR)",
+    "test_used_for_selection": false
+  },
+  "features": [
+    "url_length",
+    "host_length",
+    "path_length",
+    "query_length",
+    "fragment_length",
+    "host_label_count",
+    "subdomain_count",
+    "digit_ratio",
+    "host_digit_ratio",
+    "hyphen_count",
+    "dot_count",
+    "at_count",
+    "percent_count",
+    "slash_count",
+    "query_param_count",
+    "has_ip",
+    "is_https",
+    "has_port",
+    "has_userinfo",
+    "has_punycode",
+    "sensitive_word_count",
+    "url_entropy"
+  ],
+  "models": {
+    "logistic_regression": {
+      "validation": {
+        "threshold": 0.37,
+        "precision": 0.9995469646632438,
+        "recall": 0.9878613004328143,
+        "f1": 0.9936697775664923,
+        "fpr": 0.0003337041156840934,
+        "accuracy": 0.9946251407448323,
+        "tp": 19857,
+        "fp": 9,
+        "tn": 26961,
+        "fn": 244,
+        "roc_auc": 0.9969443714137931,
+        "average_precision": 0.9977907450183133
+      },
+      "threshold_0_5_validation": {
+        "threshold": 0.5,
+        "precision": 0.9996978091160916,
+        "recall": 0.9874633102830704,
+        "f1": 0.9935428971869055,
+        "fpr": 0.0002224694104560623,
+        "accuracy": 0.994518918229908,
+        "tp": 19849,
+        "fp": 6,
+        "tn": 26964,
+        "fn": 252
+      },
+      "test": {
+        "threshold": 0.37,
+        "precision": 0.9991444819083086,
+        "recall": 0.9877120541266604,
+        "f1": 0.9933953767637347,
+        "fpr": 0.0006303299962921765,
+        "accuracy": 0.9943914512119989,
+        "tp": 19854,
+        "fp": 17,
+        "tn": 26953,
+        "fn": 247,
+        "roc_auc": 0.9966199640646769,
+        "average_precision": 0.9975200502573194
+      }
+    },
+    "random_forest": {
+      "validation": {
+        "threshold": 0.38,
+        "precision": 0.9991989586462401,
+        "recall": 0.9928859260733297,
+        "f1": 0.9960324391765439,
+        "fpr": 0.0005932517612161661,
+        "accuracy": 0.9966221240254084,
+        "tp": 19958,
+        "fp": 16,
+        "tn": 26954,
+        "fn": 143,
+        "roc_auc": 0.9980455540455072,
+        "average_precision": 0.9985035324721456
+      },
+      "threshold_0_5_validation": {
+        "threshold": 0.5,
+        "precision": 0.9995489626140123,
+        "recall": 0.992239192079996,
+        "f1": 0.9958806640868805,
+        "fpr": 0.0003337041156840934,
+        "accuracy": 0.9964946570074993,
+        "tp": 19945,
+        "fp": 9,
+        "tn": 26961,
+        "fn": 156
+      },
+      "test": {
+        "threshold": 0.38,
+        "precision": 0.9988489640676609,
+        "recall": 0.9929356748420477,
+        "f1": 0.995883541651074,
+        "fpr": 0.0008527994067482388,
+        "accuracy": 0.9964946570074993,
+        "tp": 19959,
+        "fp": 23,
+        "tn": 26947,
+        "fn": 142,
+        "roc_auc": 0.9978902814424531,
+        "average_precision": 0.9983457506282905
+      }
+    }
+  },
+  "export_validation": {
+    "samples": 1000,
+    "classes_checked": [
+      0,
+      1
+    ],
+    "max_absolute_score_difference": 4.440892098500626e-16
+  },
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scikit_learn": "1.8.0",
+    "tldextract": "5.4.0"
+  },
+  "feature_version": "url-lexical-v1",
+  "source_fingerprints": {
+    "features_sha256": "75e32c08aaa00f0666e50c72dde8a7f9d1f22e3e38a1fa6e9ee6286c2dc76265",
+    "urltools_sha256": "18ec1b931bf7016c11e3bdc6a924464fe246be0a413e3d5546203fc59b286ddd"
+  },
+  "training_parameters": {
+    "random_state": 42,
+    "random_forest_n_estimators": 80,
+    "random_forest_max_depth": 10,
+    "random_forest_min_samples_leaf": 5
+  },
+  "feature_means_by_class": {
+    "legitimate": {
+      "url_length": 27.228609566184648,
+      "host_length": 19.228609566184648,
+      "path_length": 0.0,
+      "query_length": 0.0,
+      "fragment_length": 0.0,
+      "host_label_count": 3.1616611049314054,
+      "subdomain_count": 1.0294771968854282,
+      "digit_ratio": 0.002029545874191935,
+      "host_digit_ratio": 0.0030423014706640198,
+      "hyphen_count": 0.0832035595105673,
+      "dot_count": 2.1616611049314054,
+      "at_count": 0.0,
+      "percent_count": 0.0,
+      "slash_count": 2.0,
+      "query_param_count": 0.0,
+      "has_ip": 0.0,
+      "is_https": 1.0,
+      "has_port": 0.0,
+      "has_userinfo": 0.0,
+      "has_punycode": 0.0,
+      "sensitive_word_count": 0.00027437893956247685,
+      "url_entropy": 3.8525585414217964
+    },
+    "phishing": {
+      "url_length": 46.21884918858144,
+      "host_length": 24.44053411340955,
+      "path_length": 8.710735002935236,
+      "query_length": 5.190093828044934,
+      "fragment_length": 0.3190054028237963,
+      "host_label_count": 3.1452195456852032,
+      "subdomain_count": 0.832990059998209,
+      "digit_ratio": 0.06350291732532738,
+      "host_digit_ratio": 0.06837859938510478,
+      "hyphen_count": 0.7056107777877277,
+      "dot_count": 2.3848740833606956,
+      "at_count": 0.017173616707958965,
+      "percent_count": 0.058734565137359085,
+      "slash_count": 3.0163378207615694,
+      "query_param_count": 0.14266240808732078,
+      "has_ip": 0.0060097708526113645,
+      "is_https": 0.4862939414743839,
+      "has_port": 0.0002586987453110852,
+      "has_userinfo": 9.949951742734048e-05,
+      "has_punycode": 0.0014924927614101073,
+      "sensitive_word_count": 0.04976965861715571,
+      "url_entropy": 4.10499702893259
+    }
+  },
+  "raw_format_audit": {
+    "legitimate": {
+      "rows": 134850,
+      "https_prefix_ratio": 1.0,
+      "https_www_prefix_ratio": 1.0,
+      "http_www_prefix_ratio": 0.0
+    },
+    "phishing": {
+      "rows": 100945,
+      "https_prefix_ratio": 0.48735449997523406,
+      "https_www_prefix_ratio": 0.024260736044380605,
+      "http_www_prefix_ratio": 0.38929119817722524
+    }
+  },
+  "audit_status": "superseded_development_baseline_not_primary_model",
+  "reason_for_replacement": "All legitimate source URLs use https://www. with empty path/query. Full URL numeric model relied on formatting shortcuts and falsely flagged ordinary bare-domain and path URLs.",
+  "limitations": "Historical internal split results, not independently validated internet performance. Only metrics preserved; old model is not shipped."
+}
