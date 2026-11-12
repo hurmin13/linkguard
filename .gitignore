@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Credentials and local settings
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local datasets and trained artifacts
+data/raw/
+data/processed/
+models/
+*.joblib
+*.pkl
+*.log
